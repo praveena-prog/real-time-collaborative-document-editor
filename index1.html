@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CollabWrite - Real-time Collaborative Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .user-cursor {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background-color: currentColor;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .user-cursor::after {
+            content: attr(data-username);
+            position: absolute;
+            top: -20px;
+            left: 2px;
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: white;
+            background-color: currentColor;
+            white-space: nowrap;
+        }
+        .editor-content {
+            min-height: calc(100vh - 150px);
+        }
+        .smooth-transition {
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-users text-blue-500 text-xl"></i>
+                    <h1 class="text-xl font-bold text-gray-800">CollabWrite</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="share-btn" class="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-md text-sm font-medium smooth-transition">
+                            <i class="fas fa-share-alt"></i>
+                            <span>Share</span>
+                        </button>
+                        <div id="share-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                            <div class="p-4">
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Invite collaborators</h3>
+                                <div class="flex space-x-2 mb-3">
+                                    <input type="text" id="share-link" class="flex-1 text-xs border border-gray-300 rounded px-2 py-1" value="https://collabwrite.com/doc/abc123" readonly>
+                                    <button onclick="copyShareLink()" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs smooth-transition">
+                                        Copy
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Anyone with the link can edit</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-1">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span id="user-count" class="text-sm text-gray-600">1 online</span>
+                    </div>
+                    
+                    <div class="relative">
+                        <button id="user-menu-btn" class="flex items-center space-x-1">
+                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">U</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Document Info -->
+        <div class="bg-white border-b">
+            <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+                <input type="text" id="document-title" value="Untitled Document" class="text-2xl font-bold text-gray-800 w-full focus:outline-none hover:bg-gray-50 px-1 py-1 rounded">
+                <div class="flex items-center space-x-4 mt-1">
+                    <div class="flex items-center space-x-1 text-sm text-gray-500">
+                        <i class="far fa-clock"></i>
+                        <span>Last edited just now</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm text-gray-500">
+                        <i class="far fa-file-alt"></i>
+                        <span>0 words</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Toolbar -->
+        <div class="bg-white border-b">
+            <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
+                <div class="flex items-center space-x-1 overflow-x-auto">
+                    <select class="text-sm border border-gray-300 rounded px-2 py-1 bg-white">
+                        <option>Normal text</option>
+                        <option>Heading 1</option>
+                        <option>Heading 2</option>
+                        <option>Heading 3</option>
+                    </select>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-bold"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-italic"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-underline"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-link"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-list-ol"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-quote-right"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:bg-gray-100 rounded smooth-transition">
+                        <i class="fas fa-code"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Editor Area -->
+        <div class="flex-1 overflow-auto">
+            <div class="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8 relative">
+                <div id="editor" class="editor-content bg-white p-6 rounded shadow-sm focus:outline-none" contenteditable="true">
+                    <p>Start typing here...</p>
+                </div>
+                
+                <!-- This is where other users' cursors will appear -->
+                <div id="user-cursors"></div>
+            </div>
+        </div>
+        
+        <!-- Status Bar -->
+        <footer class="bg-white border-t">
+            <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                        <i class="fas fa-globe"></i>
+                        <span>100%</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                        <i class="fas fa-keyboard"></i>
+                        <span>English</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                        <span>0 words</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                        <span>Suggesting</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simulate real-time collaboration
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = document.getElementById('editor');
+            const shareBtn = document.getElementById('share-btn');
+            const shareDropdown = document.getElementById('share-dropdown');
+            const userCursors = document.getElementById('user-cursors');
+            const userCount = document.getElementById('user-count');
+            
+            // Current user data
+            const currentUser = {
+                id: 'user_' + Math.random().toString(36).substr(2, 8),
+                name: 'User ' + Math.floor(Math.random() * 100),
+                color: getRandomColor()
+            };
+            
+            // Simulate other users
+            const otherUsers = [
+                { id: 'user_abc123', name: 'Alex Johnson', color: '#3B82F6' },
+                { id: 'user_def456', name: 'Sam Wilson', color: '#10B981' },
+                { id: 'user_ghi789', name: 'Taylor Swift', color: '#F59E0B' }
+            ];
+            
+            // Update user count
+            userCount.textContent = `${otherUsers.length + 1} online`;
+            
+            // Share button toggle
+            shareBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                shareDropdown.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                shareDropdown.classList.add('hidden');
+            });
+            
+            // Track cursor position
+            editor.addEventListener('keyup', updateCursorPosition);
+            editor.addEventListener('click', updateCursorPosition);
+            editor.addEventListener('input', simulateCollaboration);
+            
+            // Initial cursor position
+            updateCursorPosition();
+            
+            // Simulate other users typing
+            setInterval(simulateOtherUsers, 3000);
+            
+            function updateCursorPosition() {
+                // In a real app, this would send the cursor position to other users
+                // Here we just simulate it
+                
+                // Clear existing cursor for current user
+                document.querySelectorAll('.user-cursor').forEach(el => {
+                    if (el.dataset.userid === currentUser.id) {
+                        el.remove();
+                    }
+                });
+                
+                // Get current cursor position
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    const editorRect = editor.getBoundingClientRect();
+                    
+                    // Create cursor element
+                    if (rect.width === 0) { // Only show cursor when collapsed (not selecting text)
+                        const cursor = document.createElement('div');
+                        cursor.className = 'user-cursor';
+                        cursor.style.left = (rect.left - editorRect.left) + 'px';
+                        cursor.style.top = (rect.top - editorRect.top) + 'px';
+                        cursor.style.color = currentUser.color;
+                        cursor.dataset.username = currentUser.name;
+                        cursor.dataset.userid = currentUser.id;
+                        userCursors.appendChild(cursor);
+                    }
+                }
+            }
+            
+            function simulateCollaboration() {
+                // In a real app, this would send changes to a server and broadcast to other users
+                // Here we just update the word count
+                updateWordCount();
+            }
+            
+            function simulateOtherUsers() {
+                // Clear existing cursors (except current user)
+                document.querySelectorAll('.user-cursor').forEach(el => {
+                    if (el.dataset.userid !== currentUser.id) {
+                        el.remove();
+                    }
+                });
+                
+                // Simulate random activity from other users
+                otherUsers.forEach(user => {
+                    if (Math.random() > 0.3) { // 70% chance of activity
+                        // Random position in editor
+                        const textNodes = getTextNodes(editor);
+                        if (textNodes.length > 0) {
+                            const randomNode = textNodes[Math.floor(Math.random() * textNodes.length)];
+                            const range = document.createRange();
+                            
+                            // Random offset in the text node
+                            const offset = Math.floor(Math.random() * (randomNode.length + 1));
+                            range.setStart(randomNode, offset);
+                            range.setEnd(randomNode, offset);
+                            
+                            const rect = range.getBoundingClientRect();
+                            const editorRect = editor.getBoundingClientRect();
+                            
+                            // Create cursor element
+                            const cursor = document.createElement('div');
+                            cursor.className = 'user-cursor';
+                            cursor.style.left = (rect.left - editorRect.left) + 'px';
+                            cursor.style.top = (rect.top - editorRect.top) + 'px';
+                            cursor.style.color = user.color;
+                            cursor.dataset.username = user.name;
+                            cursor.dataset.userid = user.id;
+                            userCursors.appendChild(cursor);
+                        }
+                    }
+                });
+                
+                // Occasionally simulate text insertion
+                if (Math.random() > 0.7) {
+                    const randomUser = otherUsers[Math.floor(Math.random() * otherUsers.length)];
+                    const textToInsert = getRandomText();
+                    
+                    // Find a random position
+                    const textNodes = getTextNodes(editor);
+                    if (textNodes.length > 0) {
+                        const randomNode = textNodes[Math.floor(Math.random() * textNodes.length)];
+                        const offset = Math.floor(Math.random() * (randomNode.length + 1));
+                        
+                        // Insert text
+                        randomNode.textContent = randomNode.textContent.slice(0, offset) + textToInsert + randomNode.textContent.slice(offset);
+                        
+                        // Update word count
+                        updateWordCount();
+                    }
+                }
+            }
+            
+            function getTextNodes(element) {
+                const textNodes = [];
+                const walker = document.createTreeWalker(
+                    element,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let node;
+                while (node = walker.nextNode()) {
+                    textNodes.push(node);
+                }
+                
+                return textNodes;
+            }
+            
+            function updateWordCount() {
+                const text = editor.innerText.trim();
+                const wordCount = text === '' ? 0 : text.split(/\s+/).length;
+                document.querySelectorAll('footer span').forEach(el => {
+                    if (el.textContent.includes('words')) {
+                        el.textContent = `${wordCount} words`;
+                    }
+                });
+            }
+            
+            function getRandomColor() {
+                const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            function getRandomText() {
+                const texts = [
+                    'Hello! ',
+                    'What do you think? ',
+                    'I suggest we add... ',
+                    'This looks good. ',
+                    'Maybe we should change this. ',
+                    '👍 ',
+                    'Let me know your thoughts. '
+                ];
+                return texts[Math.floor(Math.random() * texts.length)];
+            }
+        });
+        
+        function copyShareLink() {
+            const shareLink = document.getElementById('share-link');
+            shareLink.select();
+            document.execCommand('copy');
+            
+            // Show copied feedback
+            const button = document.querySelector('#share-dropdown button');
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            button.classList.add('bg-green-500', 'hover:bg-green-600');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
