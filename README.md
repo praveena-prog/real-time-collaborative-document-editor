@@ -78,3 +78,5 @@ Real-time communication (e.g., Socket.io)
 
 
 OUTPUT :
+
+![Image](https://github.com/user-attachments/assets/6e449f47-348f-4d9b-a347-b17c92bf36a5)
