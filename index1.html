@@ -98,9 +98,7 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Toolbar -->
-        <div class="bg-white border-b">
+         <div class="bg-white border-b">
             <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
                 <div class="flex items-center space-x-1 overflow-x-auto">
                     <select class="text-sm border border-gray-300 rounded px-2 py-1 bg-white">
@@ -139,20 +137,14 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Editor Area -->
         <div class="flex-1 overflow-auto">
             <div class="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8 relative">
                 <div id="editor" class="editor-content bg-white p-6 rounded shadow-sm focus:outline-none" contenteditable="true">
                     <p>Start typing here...</p>
                 </div>
-                
-                <!-- This is where other users' cursors will appear -->
                 <div id="user-cursors"></div>
             </div>
         </div>
-        
-        <!-- Status Bar -->
         <footer class="bg-white border-t">
             <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
                 <div class="flex items-center space-x-4">
@@ -179,73 +171,51 @@
     </div>
 
     <script>
-        // Simulate real-time collaboration
         document.addEventListener('DOMContentLoaded', function() {
             const editor = document.getElementById('editor');
             const shareBtn = document.getElementById('share-btn');
             const shareDropdown = document.getElementById('share-dropdown');
             const userCursors = document.getElementById('user-cursors');
             const userCount = document.getElementById('user-count');
-            
-            // Current user data
             const currentUser = {
                 id: 'user_' + Math.random().toString(36).substr(2, 8),
                 name: 'User ' + Math.floor(Math.random() * 100),
                 color: getRandomColor()
             };
-            
-            // Simulate other users
             const otherUsers = [
                 { id: 'user_abc123', name: 'Alex Johnson', color: '#3B82F6' },
                 { id: 'user_def456', name: 'Sam Wilson', color: '#10B981' },
                 { id: 'user_ghi789', name: 'Taylor Swift', color: '#F59E0B' }
             ];
-            
-            // Update user count
             userCount.textContent = `${otherUsers.length + 1} online`;
-            
-            // Share button toggle
             shareBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 shareDropdown.classList.toggle('hidden');
             });
-            
-            // Close dropdown when clicking outside
             document.addEventListener('click', function() {
                 shareDropdown.classList.add('hidden');
             });
-            
-            // Track cursor position
+        
             editor.addEventListener('keyup', updateCursorPosition);
             editor.addEventListener('click', updateCursorPosition);
             editor.addEventListener('input', simulateCollaboration);
-            
-            // Initial cursor position
-            updateCursorPosition();
-            
-            // Simulate other users typing
+            updateCursorPosition()
             setInterval(simulateOtherUsers, 3000);
             
             function updateCursorPosition() {
-                // In a real app, this would send the cursor position to other users
-                // Here we just simulate it
-                
-                // Clear existing cursor for current user
                 document.querySelectorAll('.user-cursor').forEach(el => {
                     if (el.dataset.userid === currentUser.id) {
                         el.remove();
                     }
                 });
-                
-                // Get current cursor position
                 const selection = window.getSelection();
                 if (selection.rangeCount > 0) {
                     const range = selection.getRangeAt(0);
                     const rect = range.getBoundingClientRect();
                     const editorRect = editor.getBoundingClientRect();
                     
-                    // Create cursor element
-                    if (rect.width === 0) { // Only show cursor when collapsed (not selecting text)
+        
+                    if (rect.width === 0) { 
                         const cursor = document.createElement('div');
                         cursor.className = 'user-cursor';
                         cursor.style.left = (rect.left - editorRect.left) + 'px';
@@ -259,37 +229,28 @@
             }
             
             function simulateCollaboration() {
-                // In a real app, this would send changes to a server and broadcast to other users
-                // Here we just update the word count
                 updateWordCount();
             }
             
             function simulateOtherUsers() {
-                // Clear existing cursors (except current user)
                 document.querySelectorAll('.user-cursor').forEach(el => {
                     if (el.dataset.userid !== currentUser.id) {
                         el.remove();
                     }
                 });
-                
-                // Simulate random activity from other users
                 otherUsers.forEach(user => {
-                    if (Math.random() > 0.3) { // 70% chance of activity
-                        // Random position in editor
+                    if (Math.random() > 0.3) { 
+                    
                         const textNodes = getTextNodes(editor);
                         if (textNodes.length > 0) {
                             const randomNode = textNodes[Math.floor(Math.random() * textNodes.length)];
                             const range = document.createRange();
-                            
-                            // Random offset in the text node
                             const offset = Math.floor(Math.random() * (randomNode.length + 1));
                             range.setStart(randomNode, offset);
                             range.setEnd(randomNode, offset);
                             
                             const rect = range.getBoundingClientRect();
                             const editorRect = editor.getBoundingClientRect();
-                            
-                            // Create cursor element
                             const cursor = document.createElement('div');
                             cursor.className = 'user-cursor';
                             cursor.style.left = (rect.left - editorRect.left) + 'px';
@@ -301,22 +262,14 @@
                         }
                     }
                 });
-                
-                // Occasionally simulate text insertion
                 if (Math.random() > 0.7) {
                     const randomUser = otherUsers[Math.floor(Math.random() * otherUsers.length)];
                     const textToInsert = getRandomText();
-                    
-                    // Find a random position
                     const textNodes = getTextNodes(editor);
                     if (textNodes.length > 0) {
                         const randomNode = textNodes[Math.floor(Math.random() * textNodes.length)];
                         const offset = Math.floor(Math.random() * (randomNode.length + 1));
-                        
-                        // Insert text
-                        randomNode.textContent = randomNode.textContent.slice(0, offset) + textToInsert + randomNode.textContent.slice(offset);
-                        
-                        // Update word count
+                         randomNode.textContent = randomNode.textContent.slice(0, offset) + textToInsert + randomNode.textContent.slice(offset);
                         updateWordCount();
                     }
                 }
