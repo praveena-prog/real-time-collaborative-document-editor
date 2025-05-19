@@ -75,7 +75,7 @@ Project structure
 Real-time communication (e.g., Socket.io)
 
 
-
+OUTPUT :
 
 ![Image](https://github.com/user-attachments/assets/dea110f0-3b95-414e-aa91-8a70568bd1f0)
 
